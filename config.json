@@ -1,0 +1,149 @@
+{"languages": {
+    "Spanish":
+    {"dir": "es",
+     "phrases": [
+         {
+             "file": "1-10.wav"
+         },
+         {
+             "file": "name_is_--_What_s_your_name_bell.wav"
+         },
+         {
+             "file": "chao.wav"
+         },
+         {
+             "file": "estas.wav"
+         },
+         {
+             "file": "Hola.wav"
+         },
+         {
+             "file": "ducks_are_great.wav"
+         }
+     ]
+    },
+
+    "French":
+    {"dir": "fr",
+     "phrases": [
+         {
+             "file": "1-10.wav"
+         },
+         {
+             "file": "How_are_you_semiformal_opt_two.wav"
+         },
+         {
+             "file": "name_is--What_s_your_name_bell.wav"
+         },
+         {
+             "file": "Ducks_are_great.wav"
+         },
+         {
+             "file": "Hello_salut.wav"
+         },
+         {
+             "file": "Have_a_good_day.wav"
+         }
+     ]
+    },
+
+    "Japanese":
+    {"dir": "ja",
+     "phrases": [
+         {
+             "file": "1-10.wav"
+         },
+         {
+             "file": "name_is_--_What_s_your_name_bell.wav"
+         },
+         {
+             "file": "Goodbye_informal_Ja_ne.wav"
+         },
+         {
+             "file": "Ducks_are_great.wav"
+         },
+         {
+             "file": "How_are_you_doing-_Saikin_dou.wav"
+         },
+         {
+             "file": "OhayoHello_for_friend_or_peer-_Ohayo_2.wav"
+         }
+     ]
+    },
+
+    "Ichishkíin":
+    {"dir": "ichishkiin",
+     "phrases": [
+         {
+             "file": "1-10.wav"
+         },
+         {
+             "file": "name_is_--_What_s_your_name_bell.wav"
+         },
+         {
+             "file": "How_are_you.wav"
+         },
+         {
+             "file": "Ducks_are_the_best.wav"
+         },
+         {
+             "file": "Take_care.wav"
+         },
+         {
+             "file": "good_afternoon.wav"
+         },
+         {
+             "file": "good_morning.wav"
+         }
+     ]
+    },
+
+    "Mandarin":
+    {"dir": "zh",
+     "phrases": [
+         {
+             "file": "1-10.wav"
+         },
+         {
+             "file": "name_is_--_What_s_your_name_bell.wav"
+         },
+         {
+             "file": "goodbye.wav"
+         },
+         {
+             "file": "recently_how_are_you.wav"
+         },
+         {
+             "file": "formal.wav"
+         },
+         {
+             "file": "ducks_are_great.wav"
+         }
+     ]
+    },
+
+    "English":
+    {"dir": "en",
+     "phrases": [
+         {
+             "file": "1-10.wav"
+         },
+         {
+             "file": "name_is_--_What_s_your_name_bell.wav"
+         },
+         {
+             "file": "How_are_you.wav"
+         },
+         {
+             "file": "ducks_are_great.wav"
+         },
+         {
+             "file": "Have_a_nice_day.wav"
+         },
+         {
+             "file": "hello.wav"
+         }
+     ]
+    }
+}
+}
