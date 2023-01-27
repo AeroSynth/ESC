@@ -21,6 +21,7 @@ def open_ser():
             print('baudrate= ',baudrate)
             break
 
+    comport = '/dev/ttyACM0'
     print('final',comport)
     #comport = '/dev/ttyUSB0'
     ser = serial.Serial()

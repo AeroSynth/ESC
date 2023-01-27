@@ -88,6 +88,16 @@ class Toplevel1:
         self.Frame2.configure(background="#d9d9d9")
         self.Frame2.configure(highlightbackground="#d9d9d9")
         self.Frame2.configure(highlightcolor="black")
+        
+#         self.Frame3 = tk.Frame(self.top)
+#         self.Frame3.place(relx=0.45, rely=0.14, relheight=.8
+#                 , relwidth=0.5)#0.444)
+#         self.Frame3.configure(relief='ridge')
+#         self.Frame3.configure(borderwidth="5")
+#         #self.Frame2.configure(relief="ridge")
+#         self.Frame3.configure(background="#d9d9d9")
+#         self.Frame3.configure(highlightbackground="#d9d9d9")
+#         self.Frame3.configure(highlightcolor="black")
 
         self.Label1 = tk.Label(self.Frame2)
         self.Label1.place(relx=0.009, rely=0.02, height=128, width=850)

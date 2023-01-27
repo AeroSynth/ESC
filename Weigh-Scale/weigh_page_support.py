@@ -36,8 +36,9 @@ except ImportError:
 greenbutton = False
 redbutton = False
 jumpFlag = False
-
+button = 'red'
 state = 0
+scale = .9 #amount to attenuate scale readings so get good max value. Typically <=1
 
 def init(top, gui, *args, **kwargs):
     global w, top_level, root,listener
@@ -46,7 +47,8 @@ def init(top, gui, *args, **kwargs):
     root = top
     root.protocol("WM_DELETE_WINDOW", on_closing)
     root.config(cursor = "none")
-    
+
+    #top.Frame3.pack_forget()
     #for keyboard
     #listener = keyboard.Listener(on_press=on_press)
     #listener.start()
@@ -58,82 +60,78 @@ def init(top, gui, *args, **kwargs):
     GPIO.setup(24, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.add_event_detect(24,GPIO.RISING,callback=Button)
     
+    window2()
+    window2_kill()
     main_app() #start the main app
+    
 
 #called when the button is pressed
 def Button(event):
-    global greenbutton,redbutton#, state
+    global greenbutton,redbutton, state
     sleep(.005) #debounce 5ms.
     if GPIO.input(event) != 0:
         if event == 23:
-            greenbutton = 1
-            #print('green button',greenbutton)
+            greenbutton = True
+            redbutton = False
+            print('green button')#,greenbutton, redbutton)
         if event == 24:
-            redbutton = 1
-            #print('red button',redbutton)
-    
-#called if a key is pressed (if listener was 'started'
-'''
-def on_press(key):
-    global button, state
-    if key :
-        button +=1
-        state = state ^1
-        ##print("key pressed", button,state)
-'''  
+            redbutton = True
+            greenbutton = False
+            state=0
+            print('red button')
+            
 def main_app():
-    global ser,offset,a,state,fig,plt,greenbutton,redbutton
-    #print('main app')
+    global ser,offset,a,state,fig,plt,greenbutton,redbutton, button
+    #global timeout
+    print('main app')
     ser = open_ser()
     a=App()
-    redbutton=0
-    greenbutton=0
+    redbutton=False
+    greenbutton=True
     state = 0
     offset=calibrate() #make sure no weight is on the scale.
+    print(f'offset {offset}')
     #for j in range(0,1):
     while True:
         #two commands required to close the plt figure
+        print('main')
         plt.close('all')
         plt.close(plt.figure())
         #print('plt.close()')
-        
-        window1()
-        plot() #plot returns when external event occurs.
-        a.xpos = a.xstart
-        w=check_weight() #make sure they stand on scale
-        #state = 1
-        #w=True #debug
-        if w == True: #proceed if standing on scale
-            state = 1
-            jumpFlag = True
-            window2() #ready, set, go
-            plot()
-            #print('ready to analyze, Button=',greenbutton)
-            err = analyze() #this is executed before previous function is done.
-            window3() ##print results
-            a.xpos= a.xstart
-                ##print(state) #just occurs once
-#             else:
-#                 greenbutton=0
-#                 state=0
-                #window1()
-        else:#if w == False:
-            window4()
-#             if greenbutton == True:
-#                 window4() #tell user to stand on scale
-#                 greenbutton = False
-#             else:
-#                 redbutton = False
-            #greenbutton=0
-            #print('stand on scale')
-            #state=0
-        
         state = 0
-        plot() #and start over
-        #state=0
-        #print(" the end--go to beginning")
-        #print(state) #state=3 after normal process
+        window1() #display first text window
 
+        plot() #start plotting, returns when external event occurs.
+
+        w=check_weight() #make sure they stand on scale
+        print('w',w)
+       
+        if w == True and greenbutton==True: #proceed if standing on scale
+            state = 1
+            greenbutton = False
+            jumpFlag = True
+            
+            window2() #ready, set, go
+            plot() #stays here until button pressed OR TIMES OUT
+        
+            #todo:  add return in plot to signify if end of plot reached.#print('ready to analyze, Button=',greenbutton)
+            if redbutton == False:#timeout == False:
+                err = analyze() #this is executed before previous function is done.
+                print('err',err)
+                if err == True:
+                    window3() ##print results
+                else:
+                    window1()
+                    
+                state = 0 #no more analysis allowed
+                #print('window 3 plot')
+                plot() #stays here until button pressed or timesout
+     
+#         else:  #if w is False -- no weight on scale.  Consider removing?
+#             state = 0
+#             window4()
+#             #print("window 4")
+#             plot() #stays here until button pressed
 
 def check_weight(): #make sure someone is standing on the weight
     global state,offset
@@ -143,24 +141,27 @@ def check_weight(): #make sure someone is standing on the weight
         try:
             raw=ser.readline()
             raw=raw.decode()
-            raw=float(raw)
+            raw=float(raw)*scale
             calib += raw
             ##print(raw,calib)
         except:
             calib += calib    
     
     calib=calib/10 #get average
-    #print('calib',calib,'offset',offset)
-    if abs(calib-offset)<6:
+    print('calib',calib,'offset',offset, calib-offset)
+    if abs(calib-offset)<6/scale:
         #print("not on scale")
         return False
     return True
     
 def plot():
     global ser,a,state,scount, jumpFlag
-    global data,datap,i,redbutton,greenbutton,sample_size,offset#,jump#,button,i
-    greenbutton=0
-    redbutton=0
+    global data,datap,i,redbutton,greenbutton,sample_size,offset
+    #global timeout#,jump#,button,i
+    global id1,id2,id3,id4
+    #timeout = True
+    greenbutton = False
+    redbutton = False
     i=0
     w1=0
     w2=0
@@ -168,24 +169,26 @@ def plot():
     scount=0 #number of consecutive values that are close to same value
     data = []
     datap =[]
+    a.xpos= a.xstart
     ser.read_all()
     #make   
     while True:
        
-        if greenbutton == True: #in range(1,3):
-            #greenbutton = 0
-            return
+        if greenbutton == True: 
+            return 
         
-        if redbutton == True: 
-            #redbutton = 0
-            return
-       
-        raw=ser.readline()
+        if redbutton == True:
+            #cancell the window2 thread
+            window2_kill()            
+            state=0
+            return 
+        
         try:
+            raw=ser.readline()
             raw=raw.decode()
             ##print(raw)
-            raw=float(raw)
-            ##print(raw)
+            raw=float(raw)*scale
+            #print(raw)
         except:
             print("Plot Error")
             raw=offset
@@ -225,7 +228,11 @@ def plot():
             data=[]
             datap=[]
             i=-1
+            #state = 0
+            #timeout = True
+            return
         i+=1
+
 ###
 ### Calibrate scale. Should have no weight on the scale or error will return
 ###
@@ -239,7 +246,7 @@ def calibrate():
         try:
             raw=ser.readline()
             raw=raw.decode()
-            raw=float(raw)
+            raw=float(raw)*scale
             calib += raw
             ##print(raw,calib)
         except:
@@ -265,23 +272,22 @@ def moving_average(c, n=8):
         
 def open_ser():
     baudrate = 115200#57600
-    comport = 'COM1'
     ports = list(serial.tools.list_ports.comports())
     for p in ports:
         b=str(p)
-        #print(b)
+        print(b)
         a=b.find("USB")
-        #aa=b.find("AMA")
+        aa=b.find("ACM")
         if a >=0:
             comport=b[:a+4]
-        #if aa >=0:
-        #    comport=b[:aa+4]
+        else:
+            if aa >=0:
+                comport=b[:aa+4]
     
-    #print("USB at ",comport)
-    #print('baudrate= ',baudrate)
-    #comport = '/dev/ttyUSB0'
-    #comport = '/dev/ttyUSB1'
-    #comport = '/dev/ttyAMA0'
+    #comport = '/dev/ttyACM0'
+    print("USB at ",comport)
+    print('baudrate= ',baudrate)
+    
     ser = serial.Serial()
     ser.baudrate = baudrate
     ser.port = comport
@@ -289,12 +295,19 @@ def open_ser():
     try:
         ser.open()
     except:
-        #print("Error.  Incorrect COM port or baud rate")
+        print("Error.  Incorrect COM port or baud rate")
         sys.exit()
     return ser
 
-def window1():
+''' this kills the 'after' thread in window2.  Used in various places '''
+def window2_kill():
+    global id2,id3,id4
+    root.after_cancel(id2)
+    root.after_cancel(id3)
+    root.after_cancel(id4)
 
+def window1():
+    window2_kill()
     w.Label1.configure(text='How High Can You Jump?')
     w.Label2.configure(text='How Long Can You Stay in the Air?')
     w.Label4.configure(text='Stand on the Scale and\rPress the GREEN Button')
@@ -302,69 +315,68 @@ def window1():
     return
 
 def window2():
-    global jumpFlag #should be True when function first called
-    td = 1000
+
+    global id1,id2,id3,id4
     w.Label1.configure(text='* Prepare to Jump *')
     w.Label2.configure(text='')
     w.Label3.configure(text='')
     w.Label4.configure(text='')
-   
-    tk.w=root.after(td,lambda:w.Label2.configure(text='READY'))
-    #root.after_cancel(tk.w)
-    td=td+1000
-    tk.w=root.after(td,lambda:w.Label3.configure(text='SET'))
-    #root.after_cancel(tk.w)
-    td=td+1000
-    tk.w=root.after(td,lambda:w.Label4.configure(text='JUMP!'))
-    #root.after_cancel(tk.w)#print('gb',greenbutton)
     
-    jumpFlag = False
-    return
+    td = 1000 #wait time for next label
+    id2=root.after(td,lambda:w.Label2.configure(text='READY'))
+    td=td+1000    
+    id3 = root.after(td,lambda:w.Label3.configure(text='SET'))
+    td=td+1000
+    id4 =root.after(td,lambda:w.Label4.configure(text='JUMP!'))
 
+        
+        
 def window3():
     global jumpInch,jumpCM,AirTime 
-
+    window2_kill()
     #w.Label1.configure(text='RESULTS')
-    w.Label1.configure(text='Air Time = '+str(AirTime)+' Seconds')
-    w.Label2.configure(text='Height = '+str(jumpInch)+' Inches')
-    w.Label3.configure(text='Height = '+str(jumpCM)+' Centimeters')
-    w.Label4.configure(text='Press the RED Button\r to Start Over')# or wait 10 sec.')
+    try:
+        w.Label1.configure(text='Air Time = '+str(AirTime)+' Seconds')
+        w.Label2.configure(text='Height = '+str(jumpInch)+' Inches')
+        w.Label3.configure(text='Height = '+str(jumpCM)+' Centimeters')
+    except:
+        print('window3 error')
+        #window2_kill()
+        window1()
+        
+    w.Label4.configure(text='Press the GREEN Button\r to Start Over')# or wait 10 sec.')
     #root.after(10000,lambda:foo())
     
 def window4():
     w.Label1.configure(text='')
     w.Label2.configure(text='Please Stand on the Scale')
     w.Label3.configure(text='')
-    w.Label4.configure(text='Press the RED Button\r to Start Over')
+    w.Label4.configure(text='Press the GREEN Button\r to Start Over')
     
     
 def window5():
+    window2_kill()
     w.Label1.configure(text='')    
     w.Label3.configure(text='Analyzing...')
     w.Label4.configure(text= '')#"Please Don't Move")
     w.Label2.configure(text='')
-    
-    
-def foo():
-    global state, greenbutton
-    #print("exit from Window3")
-    state=0
-    greenbutton=0
-    
 
     
 def analyze():
     global i,dataNP,offset,data, jumpInch,jumpCM,AirTime
     global ax,fig
-    sample_rate=50.
+    sample_rate=40.
     sample_size = i
-        
-    m0 = np.argmin(data) #find min value in array. ToDo fix so first min not always picked
-    #print(m0)
+    try:    
+        m0 = np.argmin(data) #find min value in array. ToDo fix so first min not always picked
+    except:
+        print('math error')
+        #window2_kill()
+        return False
     #m0=int(m0-.005*m0) #go back 0.5% of y axis.
     m0 -=1 #go back one sample.
     #print("m0", m0)
-    thresh = data[m0]
+    thresh = data[m0] #todo:  may want to make this fuzzy
     m1=m0
     #print('m0,m1 =',m0,m1,data[m0]-offset,data[m1]-offset,offset, thresh)
     try:
@@ -376,7 +388,9 @@ def analyze():
                 break
     except:
         print("analysis error")
-        return -1
+        #window2_kill()
+        state = 0
+        return False
             
         
     m1 -= 1
@@ -399,7 +413,8 @@ def analyze():
     #check to make sure data makes sense
     if jumpInch >24 :
         print("bad data")
-        return -1
+        #window2_kill()
+        return False
     '''Plot meaningfull data using matplotlib '''
     
     dataNP=np.array(data,dtype=float)-offset
@@ -417,15 +432,13 @@ def analyze():
     ax.plot(xaxis[m0],dataNP[m0],'ro') #plot the two minima values
     ax.plot(xaxis[m1],dataNP[m1],'ro')
     
-    ax.set(xlabel='time (s)', ylabel='newtons', title='Your "Flight" Profile')
+    ax.set(xlabel='time (s)', ylabel='relative wieght', title='Your "Flight" Profile')
     ax.grid()
     
     plt.tight_layout()
-    
-   
     plt.show()
     plt.pause(0.1)
-    return 0
+    return True
     
 
 def on_closing():
@@ -444,15 +457,18 @@ def destroy_window():
 
 class App:
     wwidth = 800
+    hheight = 512
     xstart=0
     samplerate=50
     def __init__(self):
         self.xpos=self.xstart#0 #change to 75 but runs out of range in addPoint
         self.line1avg=0
-        self.c = tk.Canvas(w.Frame1, width=self.wwidth, height=512) #place canvas in Frame1
+        self.c = tk.Canvas(w.Frame1, width=self.wwidth, height=self.hheight) #place canvas in Frame1
         #self.c.tk.call('tk','scaling',2.5) 
         self.c.pack()
         self.white()
+       
+        print('init')
 
     def __del__(self):
         print("removed")
@@ -487,13 +503,17 @@ class App:
         self.xpos=self.xstart
         
     def addPoint(self,val):
+        if val > self.hheight :
+            val = self.hheight
+        if val < 0:
+            value=0
         self.c.coords(self.lines[self.xpos],(self.xpos-1,self.lastpos,self.xpos,val))
         self.c.coords(self.lineRedraw,(self.xpos+1,0,self.xpos+1,self.wwidth)) #draw the vertical line
         self.lastpos= val
         self.xpos+=1 #sets span
         
         if self.xpos>=self.wwidth:
-            ##print("blah")
+            #print("blah")
             self.xpos=self.xstart#0
                     
         root.update()
