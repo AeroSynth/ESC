@@ -7,5 +7,8 @@ The program inputs audio from the piano and splits it into two frequency bands w
 The main program is ESC_Piano.py.
 The other programs are for testing various filtering functions.
 
+The files "How_to_build_Piano_for_RPI" are not pertinent as I was unable to intall the pysci library on a Raspberry Pi 4.
+
+
 
 
